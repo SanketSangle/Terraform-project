@@ -1,0 +1,63 @@
+---Create an instance on AWS and run the following commands---
+
+
+curl -O https://dlcdn.apache.org/tomcat/tomcat-8/v8.5.100/bin/apache-tomcat-8.5.100.tar.gz
+
+curl -O https://projectbucket-2.s3.amazonaws.com/student.war
+
+curl -O https://projectbucket-2.s3.amazonaws.com/mysql-connector.jar
+
+tar -xzvf apache-tomcat-8.5.100.tar.gz
+
+mv student.war apache-tomcat-8.5.100/webapps/
+
+mv mysql-connector.jar apache-tomcat-8.5.100/lib/
+
+yum install java -y
+
+chmod 700 apache-tomcat-8.5.100/bin/catalina.sh
+
+./apache-tomcat-8.5.100/bin/catalina.sh start
+
+yum install mariadb105-server -y 
+
+---(Create an RDS instance user=admin password=Admin123)---
+
+mysql -h database-1.c74eggymqms6.us-east-1.rds.amazonaws.com -u admin -pAdmin123
+
+create database studentapp;
+use studentapp;
+CREATE TABLE if not exists students(student_id INT NOT NULL AUTO_INCREMENT,
+	student_name VARCHAR(100) NOT NULL,
+    	student_addr VARCHAR(100) NOT NULL,
+	student_age VARCHAR(3) NOT NULL,
+	student_qual VARCHAR(20) NOT NULL,
+	student_percent VARCHAR(10) NOT NULL,
+	student_year_passed VARCHAR(10) NOT NULL,
+	PRIMARY KEY (student_id));
+
+vim apache-tomcat-8.5.100/conf/context.xml
+
+---On line 21---
+<Resource name="jdbc/TestDB" auth="Container" type="javax.sql.DataSource"
+               maxTotal="100" maxIdle="30" maxWaitMillis="10000"
+               username="admin" password="Admin123" driverClassName="com.mysql.jdbc.Driver"
+               url="jdbc:mysql://database-1.c74eggymqms6.us-east-1.rds.amazonaws.com:3306/studentapp"/>
+
+./apache-tomcat-8.5.100/bin/catalina.sh start
+
+yum install nginx -y 
+
+systemctl start nginx
+
+systemctl enable nginx
+
+---on line 45---
+location /{
+proxy_pass http://localhost:8080/student/;
+}
+
+systemctl restart nginx
+
+---After executing above steps create an image from this instance---
+---Use the newly created ami id in your main.tf file---
